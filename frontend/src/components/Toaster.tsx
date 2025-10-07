@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type Toast = { id: number; type: 'success' | 'error'; message: string }
@@ -20,14 +20,19 @@ export default function Toaster({ toasts }: { toasts: Toast[] }) {
         {toasts.map((t) => (
           <motion.div
             key={t.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className={`rounded-xl px-4 py-3 backdrop-blur-xl border ${
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+            className={`px-5 py-3 backdrop-blur-md border-2 font-cyber uppercase text-sm ${
               t.type === 'success'
-                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-200'
-                : 'bg-rose-500/15 border-rose-500/30 text-rose-200'
+                ? 'bg-dark-card border-cyber-green text-cyber-green'
+                : 'bg-dark-card border-cyber-pink text-cyber-pink'
             }`}
+            style={{
+              boxShadow: t.type === 'success'
+                ? '0 0 20px rgba(0, 255, 65, 0.5)'
+                : '0 0 20px rgba(255, 0, 110, 0.5)'
+            }}
           >
             {t.message}
           </motion.div>
