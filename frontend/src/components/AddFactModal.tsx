@@ -8,23 +8,30 @@ export default function AddFactModal({
   categories,
   onClose,
   onSubmit,
+  initial,
+  mode = 'create',
+  onDelete,
 }: {
   open: boolean
   categories: Category[]
   onClose: () => void
   onSubmit: (payload: { fact: string; category: string }) => Promise<void>
+  initial?: { fact: string; category: string }
+  mode?: 'create' | 'edit'
+  onDelete?: () => Promise<void>
 }) {
   const [fact, setFact] = useState('')
   const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(false)
+  const isEdit = mode === 'edit'
 
   useEffect(() => {
     if (open) {
-      setFact('')
-      setCategory('')
+      setFact(initial?.fact ?? '')
+      setCategory(initial?.category ?? '')
       setLoading(false)
     }
-  }, [open])
+  }, [open, initial?.fact, initial?.category])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,7 +85,7 @@ export default function AddFactModal({
             <h3 className="text-2xl font-cyber font-black uppercase text-cyber-cyan mb-6 tracking-widest" style={{
               textShadow: '0 0 20px #00F0FF'
             }}>
-              <span className="text-white/40">[</span> Добавить факт <span className="text-white/40">]</span>
+              <span className="text-white/40">[</span> {isEdit ? 'Редактировать факт' : 'Добавить факт'} <span className="text-white/40">]</span>
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -131,7 +138,21 @@ export default function AddFactModal({
                   ))}
                 </select>
               </div>
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-between items-center gap-3 pt-4">
+                {isEdit && onDelete && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true)
+                      try { await onDelete() } finally { setLoading(false) }
+                    }}
+                    className="px-5 py-2.5 bg-dark-bg border-2 border-cyber-pink/60 hover:bg-cyber-pink/20 text-cyber-pink font-cyber uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    style={{ boxShadow: '0 0 20px rgba(255, 0, 110, 0.4)' }}
+                  >
+                    Удалить
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={onClose}
@@ -147,7 +168,7 @@ export default function AddFactModal({
                     boxShadow: '0 0 20px rgba(0, 240, 255, 0.5)'
                   }}
                 >
-                  {loading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
+                  {loading ? 'СОХРАНЕНИЕ...' : (isEdit ? 'СОХРАНИТЬ' : 'ДОБАВИТЬ')}
                 </button>
               </div>
             </form>

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { AnimatePresence, motion, useMotionValue, useScroll, useTransform, useSpring } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, ChevronDown, Plus, Shuffle } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, ChevronDown, Plus, Shuffle, Pencil, Trash2 } from 'lucide-react'
 import AddFactModal from './components/AddFactModal'
 import Toaster, { useToaster } from './components/Toaster'
-import { fetchCategories, fetchFacts, fetchRandomFact, createFact, type Category } from './api'
+import { fetchCategories, fetchFacts, fetchRandomFact, createFact, updateFact, deleteFact, type Category, type Fact } from './api'
 
-type Fact = { id: number; fact: string }
+// using API Fact type
 
 const IMAGES = Array.from({ length: 10 }, (_, i) => `/src/img/${i + 1}.png`)
 const imageFor = (index: number) => (index < 10 ? IMAGES[index] : '/src/img/main.png')
@@ -175,6 +175,8 @@ function App() {
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editId, setEditId] = useState<number | null>(null)
   const { push, toasts } = useToaster()
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
   const touchX = useMotionValue<number>(0)
@@ -203,6 +205,29 @@ function App() {
   const handleCreate = async (payload: { fact: string; category: string }) => {
     await createFact(payload)
     push('success', 'Факт добавлен')
+    loadFacts()
+  }
+
+  const openEdit = (id: number) => {
+    setEditId(id)
+    setEditOpen(true)
+  }
+
+  const handleEditSubmit = async (payload: { fact: string; category: string }) => {
+    if (editId == null) return
+    await updateFact(editId, payload)
+    push('success', 'Факт обновлён')
+    setEditOpen(false)
+    // keep modal open and refresh list
+    loadFacts()
+  }
+
+  const handleEditDelete = async () => {
+    if (editId == null) return
+    await deleteFact(editId)
+    push('success', 'Факт удалён')
+    setEditOpen(false)
+    setActiveIdx(null)
     loadFacts()
   }
 
@@ -557,6 +582,22 @@ function App() {
                   >
                     {facts[activeIdx].fact}
                   </motion.div>
+                  <div className="mt-5 flex gap-3">
+                    <button
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-dark-card border-2 border-cyber-yellow font-cyber uppercase text-sm hover:bg-cyber-yellow/20 transition-all"
+                      onClick={() => openEdit(facts[activeIdx].id)}
+                      style={{ boxShadow: '0 0 15px rgba(255, 255, 0, 0.4)' }}
+                    >
+                      <Pencil className="w-4 h-4" /> Редактировать
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-dark-card border-2 border-cyber-pink font-cyber uppercase text-sm hover:bg-cyber-pink/20 transition-all"
+                      onClick={() => { setEditId(facts[activeIdx].id); setEditOpen(true) }}
+                      style={{ boxShadow: '0 0 15px rgba(255, 0, 110, 0.5)' }}
+                    >
+                      <Trash2 className="w-4 h-4" /> Удалить
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -595,8 +636,22 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Add Fact Modal & Toaster */}
-      <AddFactModal open={addOpen} categories={categories} onClose={() => setAddOpen(false)} onSubmit={handleCreate} />
+      {/* Add/Edit Fact Modals & Toaster */}
+      <AddFactModal
+        open={addOpen}
+        categories={categories}
+        onClose={() => setAddOpen(false)}
+        onSubmit={handleCreate}
+      />
+      <AddFactModal
+        open={editOpen}
+        categories={categories}
+        onClose={() => setEditOpen(false)}
+        onSubmit={handleEditSubmit}
+        onDelete={handleEditDelete}
+        mode="edit"
+        initial={editId != null ? { fact: facts.find(f => f.id === editId)?.fact ?? '', category: facts.find(f => f.id === editId)?.category ?? '' } : undefined}
+      />
       <Toaster toasts={toasts} />
     </div>
   )
